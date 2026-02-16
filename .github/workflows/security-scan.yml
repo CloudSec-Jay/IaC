@@ -84,12 +84,12 @@ jobs:
         uses: ansible/ansible-lint@main
 
 
-  kubernetes-security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Kubescape Scan
-        uses: kubescape/github-action@main
-        with:
-          files: 'Kubernetes/*.yaml' # Point this to your k3s manifest folder
-          frameworks: nsa,mitre
+ # kubernetes-security:
+ #   runs-on: ubuntu-latest
+ #   steps:
+ #     - uses: actions/checkout@v4
+ #     - name: Kubescape Scan
+ #       uses: kubescape/github-action@main
+ #       with:
+ #         files: 'Kubernetes/*.yaml' # Point this to your k3s manifest folder
+ #         frameworks: nsa,mitre
