@@ -1,0 +1,4 @@
+# Ansible/requirements.yml
+collections:
+  - name: community.docker
+  - name: community.general

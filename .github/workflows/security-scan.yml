@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main", "master" ]
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   infrastructure-scan:
     runs-on: ubuntu-latest
@@ -54,15 +58,16 @@ jobs:
 
       - name: Run Trivy scanner (SARIF for GitHub Security Tab)
         uses: aquasecurity/trivy-action@master
-        if: always() # Run even if the first step fails
+        if: always() 
         with:
           scan-type: 'fs'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
+          scanners: 'vuln,misconfig,secret'
 
       - name: Upload results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -71,6 +76,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Collections from Requirements
+        run: ansible-galaxy collection install -r Ansible/requirements.yml
+      
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@main
 
