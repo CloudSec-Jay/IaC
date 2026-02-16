@@ -69,14 +69,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Ansible Collections
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Ansible and Collections
         run: |
+          pip install ansible-core
           ansible-galaxy collection install community.docker
           ansible-galaxy collection install community.general
+          
+      - name: Verify Collections Installed
+        run: |
+          ansible-galaxy collection list
       
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@main
-        with:
-          args: "--offline"
-        env:
-          ANSIBLE_COLLECTIONS_PATH: "$HOME/.ansible/collections:/usr/share/ansible/collections" 

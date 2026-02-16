@@ -2,13 +2,13 @@
 profile: null
 
 exclude_paths:
-  - .github/workflows/         
-  - CloudFormation/            
-  - Docker/                    
+  - .github/workflows/
+  - CloudFormation/
+  - Docker/
   - Ansible/playbooks/vars/secrets.yml
 
 skip_list:
-  - yaml[brackets]            
+  - yaml[brackets]
 
 mock_modules:
   - community.docker.docker_image
