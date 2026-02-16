@@ -1,8 +1,10 @@
 # --- Terraform ---
 terraform.tfstate.backup
-terraform.lock.hcl
+.terraform.lock.hcl
 terraform.tfstate
 .terraform
+.terraform.tfstate.lock.info
+
 
 # --- Vscode ---
 .vscode/
@@ -11,6 +13,7 @@ terraform.tfstate
 Ansible/playbooks/vars/
 *secret*.yml
 vault.yml
+.ansible/
 
 # --- Docker ---
 .env
@@ -18,3 +21,10 @@ vault.yml
 # --- Checkov ---
 .checkov.baseline
 checkov_results.txt
+
+
+# ---keys ---
+*.pem
+*.key
+id_rsa
+id_ed25519

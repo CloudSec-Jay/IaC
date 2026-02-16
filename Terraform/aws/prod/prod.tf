@@ -40,7 +40,7 @@ resource "aws_s3_bucket_public_access_block" "state_bucket_pab" {
 
 
 module "networking" {
-  source = "./modules/networking"
+  source = "../modules/networking"
   
   vpc_cidr_block   = var.vpc_cidr_block
   public_subnets   = var.public_subnets
