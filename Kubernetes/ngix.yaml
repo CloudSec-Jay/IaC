@@ -1,8 +1,7 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: quick-start-app
+  name: secure-web-app
   labels:
     app: web
 spec:
@@ -15,22 +14,30 @@ spec:
       labels:
         app: web
     spec:
+      # Prevents the container from accessing the host's network
+      hostNetwork: false
+      hostPID: false
       containers:
       - name: nginx
-        image: nginx:latest
+        image: nginx:1.25-alpine # Alpine is smaller/more secure
         ports:
         - containerPort: 80
+        
+        # RESOURCE LIMITS: Prevents DoS attacks on your cluster
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: quick-start-service
-spec:
-  selector:
-    app: web
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
-  type: ClusterIP 
+        # SECURITY CONTEXT: The most important part for Kubescape
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true # Prevents attackers from writing scripts
+          runAsNonRoot: true
+          runAsUser: 101
+          capabilities:
+            drop:
+              - ALL # Removes unnecessary Linux capabilities

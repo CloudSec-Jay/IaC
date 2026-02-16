@@ -92,4 +92,4 @@ jobs:
         uses: kubescape/github-action@main
         with:
           files: 'Kubernetes/*.yaml' # Point this to your k3s manifest folder
-          framework: nsa,mitre
+          frameworks: nsa,mitre
