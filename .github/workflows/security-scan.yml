@@ -1,0 +1,27 @@
+name: Security Scan (Checkov)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          # Scan the whole repo
+          directory: .
+          # Only show me the failed checks in the logs
+          quiet: true 
+          # Don't stop the build yet (soft-fail) while you are fixing things
+          soft_fail: true 
+          # Output results in a format GitHub can read
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
