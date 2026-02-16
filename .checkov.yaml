@@ -1,10 +1,7 @@
-check:
-  - HIGH
-  - CRITICAL
-skip-check:
-  - CKV_AWS_111 # We'll fix Flow Logs later
-  - CKV_DOCKER_2 # Skip "Healthcheck" requirement for now
 framework:
   - cloudformation
-  - dockerfile
   - ansible
+  - dockerfile
+  - yaml
+quiet: false
+compact: false

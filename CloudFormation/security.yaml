@@ -11,7 +11,8 @@ Parameters:
 
 
 #security testing
-TestBucket:
+Resources:
+  TestBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "${EnvironmentName}-checkov-test-bucket"
