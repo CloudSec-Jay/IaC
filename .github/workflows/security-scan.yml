@@ -78,7 +78,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Collections from Requirements
-        run: ansible-galaxy collection install -r Ansible/requirements.yml
+        run: ansible-galaxy collection install -r Iac/Ansible/requirements.yml
       
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@main
@@ -91,5 +91,5 @@ jobs:
       - name: Kubescape Scan
         uses: kubescape/github-action@main
         with:
-          files: 'k8s/*.yaml' # Point this to your k3s manifest folder
+          files: 'Kubernetes/*.yaml' # Point this to your k3s manifest folder
           framework: nsa,mitre
