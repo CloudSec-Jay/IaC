@@ -6,7 +6,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'   
+          cpus: '0.50'
           memory: 512M
         reservations:
           memory: 128M
@@ -47,7 +47,7 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "3000:3000" 
+      - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false

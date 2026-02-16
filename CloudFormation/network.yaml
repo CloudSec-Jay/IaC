@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  Master VPC Infrastructure: Deploys a highly available network with 
+  Master VPC Infrastructure: Deploys a highly available network with
   Public/Private subnets, Internet Gateway, and NAT Gateway.
 
 Transform: AWS::LanguageExtensions
@@ -158,8 +158,8 @@ Resources:
 
   DefaultSecurityGroupHrdening:
     Type: AWS::EC2::SecurityGroup
-    Properties:  
-      GroupDescription: "Harden Default SG - 0 traffic"  
+    Properties:
+      GroupDescription: "Harden Default SG - 0 traffic"
       SecurityGroupIngress: []
       SecurityGroupEgress: []
 

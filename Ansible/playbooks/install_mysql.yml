@@ -1,5 +1,5 @@
 ---
-- name: Deploy MySQL via Docker 
+- name: Deploy MySQL via Docker
   hosts: localhost
   connection: local
   become: true
@@ -8,22 +8,22 @@
   vars_files:
     - vars/secrets.yml
 
-  tasks: 
+  tasks:
     - name: Pull MySQL Docker Image
       community.docker.docker_image:
         name: mysql:8.0
         source: pull
 
     - name: Create Docker network for MySQL
-      community.docker.docker_network:   
-        name: mysql-network 
+      community.docker.docker_network:
+        name: mysql-network
         driver: bridge
 
     - name: Create MySQL volumes
       community.docker.docker_volume:
-        name: mysql_data 
+        name: mysql_data
         state: present
-        
+
     - name: Create MySQL Container
       community.docker.docker_container:
         name: mysql-db
@@ -36,7 +36,7 @@
         env:
           MYSQL_ROOT_PASSWORD: "{{ mysql_root_password }}"
           MYSQL_DATABASE: "{{ mysql_database }}"
-        networks:                       
+        networks:
           - name: mysql-network
         volumes:
           - mysql_data:/var/lib/mysql

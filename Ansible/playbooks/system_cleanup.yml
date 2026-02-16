@@ -52,5 +52,5 @@
         weekday: "1"
         user: root
         job: |
-          {{ ansible_bin_path }}/ansible-playbook {{ playbook_dir }}/{{ ansible_self_filename | default('system_cleanup.yml') }} \ 
+          {{ ansible_bin_path }}/ansible-playbook {{ playbook_dir }}/{{ ansible_self_filename | default('system_cleanup.yml') }} \
           >> /var/log/ansible_cleanup.log 2>&1
