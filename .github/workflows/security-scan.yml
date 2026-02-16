@@ -69,20 +69,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Install Ansible and Collections
+      - name: Create requirements file
         run: |
-          pip install ansible-core
-          ansible-galaxy collection install community.docker
-          ansible-galaxy collection install community.general
-          
-      - name: Verify Collections Installed
-        run: |
-          ansible-galaxy collection list
+          cat > requirements.yml <<EOF
+          ---
+          collections:
+            - name: community.docker
+            - name: community.general
+          EOF
       
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@main
+        with:
+          requirements: requirements.yml
