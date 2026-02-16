@@ -1,14 +1,12 @@
 ---
-- name:
+- name: System Cleanup Playbook
   hosts: localhost
   connection: local
   become: true
   vars:
     ansible_python_interpreter: /usr/bin/python3
-    archive_path: 'var/log/archives'
+    archive_path: '/var/log/archives'
     ansible_bin_path: "{{ ansible_playbook_python | dirname }}"
-
-
   tasks:
     - name: Clean DNF cache
       ansible.builtin.dnf:
