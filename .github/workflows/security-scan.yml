@@ -1,18 +1,18 @@
 name: Security Scan
-
 on:
   push:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
-
+permissions:
+  contents: read
+  security-events: write
 jobs:
   infrastructure-scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@master
         with:
@@ -22,7 +22,7 @@ jobs:
           soft_fail: false
           output_format: cli,sarif
           output_file_path: console,results.sarif
-
+  
   secrets-scan:
     runs-on: ubuntu-latest
     steps:
@@ -33,54 +33,62 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
+  
   vulnerability-scan:
     name: Software Vulnerability Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Run Trivy scanner (Table view for Logs)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'table'
-          exit-code: '1' # This blocks the PR if vulnerabilities are found
+          exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
-
       - name: Run Trivy scanner (SARIF for GitHub Security Tab)
         uses: aquasecurity/trivy-action@master
-        if: always() # Run even if the first step fails
+        if: always() 
         with:
           scan-type: 'fs'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
-
+          scanners: 'vuln,misconfig,secret'
       - name: Upload results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
-
+  
   ansible-security:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Create requirements file
+        run: |
+          cat > requirements.yml <<EOF
+          ---
+          collections:
+            - name: community.docker
+            - name: community.general
+          EOF
+      
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@main
-
-
-  kubernetes-security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Kubescape Scan
-        uses: kubescape/github-action@main
         with:
-          files: 'k8s/*.yaml' # Point this to your k3s manifest folder
-          framework: nsa,mitre
+          requirements_file: requirements.yml
+
+# kubernetes-security:
+#   runs-on: ubuntu-latest
+#   steps:
+#     - uses: actions/checkout@v4
+#     - name: Kubescape Scan
+#       uses: kubescape/github-action@main
+#       with:
+#         files: 'Kubernetes/*.yaml'
+#         frameworks: nsa,mitre

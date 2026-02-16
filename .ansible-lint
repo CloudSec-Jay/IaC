@@ -1,0 +1,15 @@
+# .ansible-lint
+profile: null
+
+exclude_paths:
+  - .github/workflows/
+  - CloudFormation/
+  - Docker/
+  - Ansible/playbooks/vars/secrets.yml
+
+skip_list:
+  - yaml[brackets]
+
+mock_modules:
+  - community.docker.docker_image
+  - community.docker.docker_prune

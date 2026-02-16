@@ -1,24 +1,23 @@
 ---
-- name: 
+- name: System Cleanup Playbook
   hosts: localhost
   connection: local
   become: true
-  vars: 
+  vars:
     ansible_python_interpreter: /usr/bin/python3
     archive_path: '/var/log/archives'
     ansible_bin_path: "{{ ansible_playbook_python | dirname }}"
-
-  tasks: 
+  tasks:
     - name: Clean DNF cache
       ansible.builtin.dnf:
         autoremove: true
-    
-    - name: Remove unused Docker data 
+
+    - name: Remove unused Docker data
       community.docker.docker_prune:
         containers: true
-        images: false
+        images: true
         networks: true
-        volumes: false 
+        volumes: false
 
     - name: Ensure archive directory exists
       ansible.builtin.file:
@@ -39,6 +38,7 @@
         dest: "{{ archive_path }}/{{ item.path | basename }}_{{ ansible_date_time.date }}.gz"
         format: gz
         remove: true
+        mode: '0640'
       loop: "{{ found_logs.files }}"
       when: found_logs.matched > 0
 
@@ -48,5 +48,7 @@
         minute: "0"
         hour: "3"
         weekday: "1"
-        user: root 
-        job: "{{ ansible_bin_path }}/ansible-playbook {{ playbook_dir }}/{{ ansible_self_filename | default('system_cleanup.yml') }} >> /var/log/ansible_cleanup.log 2>&1"
+        user: root
+        job: |
+          {{ ansible_bin_path }}/ansible-playbook {{ playbook_dir }}/{{ ansible_self_filename | default('system_cleanup.yml') }} \
+          >> /var/log/ansible_cleanup.log 2>&1

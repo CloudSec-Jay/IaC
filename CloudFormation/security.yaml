@@ -11,9 +11,9 @@ Parameters:
 
 
 #security testing
-Resources:
-  TestBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub "${EnvironmentName}-checkov-test-bucket"
-      AccessControl: PublicRead # This is a major security violation
+#Resources:
+# TestBucket:
+#    Type: AWS::S3::Bucket
+#    Properties:
+#      BucketName: !Sub "${EnvironmentName}-checkov-test-bucket"
+#      AccessControl: PublicRead # This is a major security violation
