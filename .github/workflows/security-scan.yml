@@ -82,3 +82,13 @@ jobs:
         uses: ansible/ansible-lint@main
         with:
           requirements_file: requirements.yml
+
+  kubernetes-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kubescape Scan
+        uses: kubescape/github-action@main
+        with:
+          files: 'Kubernetes/*.yaml'
+          frameworks: nsa,mitre
