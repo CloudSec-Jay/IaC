@@ -8,3 +8,11 @@ Parameters:
     Type: String
     Default: dev
     Description: Name of the environment #must match VPC stack
+
+
+#security testing
+TestBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${EnvironmentName}-checkov-test-bucket"
+      AccessControl: PublicRead # This is a major security violation

@@ -18,6 +18,7 @@ jobs:
         with:
           # Scan the whole repo
           directory: .
+          framework: cloudformation,ansible,dockerfile,yaml
           # Only show me the failed checks in the logs
           quiet: true 
           # Don't stop the build yet (soft-fail) while you are fixing things
