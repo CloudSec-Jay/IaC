@@ -1,0 +1,10 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Security Layer: Deploys Security Groups for Web and Database tiers.
+  Depends on the VPC/Network stack being deployed first.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    Description: Name of the environment #must match VPC stack

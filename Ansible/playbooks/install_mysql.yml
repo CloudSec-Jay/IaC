@@ -19,11 +19,17 @@
         name: mysql-network 
         driver: bridge
 
+    - name: Create MySQL volumes
+      community.docker.docker_volume:
+        name: mysql_data 
+        state: present
+        
     - name: Create MySQL Container
       community.docker.docker_container:
         name: mysql-db
         image: mysql:8.0
         state: started
+        pull: true
         restart_policy: always
         published_ports:
           - "3306:3306"
@@ -32,3 +38,5 @@
           MYSQL_DATABASE: "{{ mysql_database }}"
         networks:                       
           - name: mysql-network
+        volumes:
+          - mysql_data:/var/lib/mysql

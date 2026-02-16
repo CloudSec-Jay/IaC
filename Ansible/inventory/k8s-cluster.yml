@@ -1,0 +1,17 @@
+all:
+  hosts:
+    master-01:
+      ansible_host: 192.168.1.10
+  children:
+    kube_control_plane:
+      hosts:
+        master-01:
+    kube_node:
+      hosts:
+        worker-01:
+          ansible_host: 192.168.1.11
+        worker-02:
+          ansible_host: 192.168.1.12
+    vars:
+      ansible_user: fedora
+      kubernetes_version: "1.28"
