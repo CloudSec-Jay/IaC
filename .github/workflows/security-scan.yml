@@ -77,8 +77,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Collections from Requirements
-        run: ansible-galaxy collection install -r Ansible/requirements.yml
+      - name: Install Collections
+        run: |
+          ansible-galaxy collection install community.docker
+          ansible-galaxy collection install community.general
       
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@main
