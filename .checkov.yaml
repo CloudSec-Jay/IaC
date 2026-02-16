@@ -6,5 +6,5 @@ skip-check:
   - CKV_DOCKER_2 # Skip "Healthcheck" requirement for now
 framework:
   - cloudformation
-  - dockercompose
+  - dockerfile
   - ansible
