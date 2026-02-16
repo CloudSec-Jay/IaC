@@ -78,7 +78,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Collections from Requirements
-        run: ansible-galaxy collection install -r Iac/Ansible/requirements.yml
+        run: ansible-galaxy collection install -r IaC/Ansible/requirements.yml
       
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@main
