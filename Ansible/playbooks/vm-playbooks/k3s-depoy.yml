@@ -1,0 +1,160 @@
+---
+- name: Deploy K3s Cluster on Local VMs
+  hosts: k3s_cluster
+  become: true
+  vars:
+    k3s_version: v1.28.5+k3s1
+    k3s_token: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
+    flannel_backend: none  # Disable Flannel to use Cilium CNI
+    
+  tasks:
+    - name: Update system packages
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+
+    - name: Install required dependencies
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Disable swap (required for Kubernetes)
+      ansible.builtin.shell: swapoff -a
+      changed_when: false
+      
+    - name: Remove swap from fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '.*swap.*'
+        state: absent
+
+- name: Deploy K3s Master Node
+  hosts: k3s_master
+  become: true
+  vars:
+    k3s_version: v1.28.5+k3s1
+    
+  tasks:
+    - name: Download K3s installation script
+      ansible.builtin.get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        mode: '0755'
+
+    - name: Install K3s master with Cilium CNI
+      ansible.builtin.shell: |
+        INSTALL_K3S_VERSION={{ k3s_version }} \
+        K3S_TOKEN={{ k3s_token }} \
+        sh /tmp/k3s-install.sh server \
+          --disable traefik \
+          --disable servicelb \
+          --flannel-backend=none \
+          --disable-network-policy \
+          --write-kubeconfig-mode=644
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Wait for K3s to be ready
+      ansible.builtin.wait_for:
+        port: 6443
+        delay: 10
+        timeout: 300
+
+    - name: Get K3s node token
+      ansible.builtin.slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      register: k3s_node_token
+
+    - name: Save node token for workers
+      ansible.builtin.set_fact:
+        k3s_token: "{{ k3s_node_token.content | b64decode | trim }}"
+
+    - name: Copy kubeconfig for local use
+      ansible.builtin.fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: ~/.kube/k3s-config
+        flat: true
+
+- name: Deploy K3s Worker Nodes
+  hosts: k3s_workers
+  become: true
+  vars:
+    k3s_version: v1.28.5+k3s1
+    k3s_master_ip: "{{ hostvars[groups['k3s_master'][0]]['ansible_default_ipv4']['address'] }}"
+    
+  tasks:
+    - name: Download K3s installation script
+      ansible.builtin.get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        mode: '0755'
+
+    - name: Join K3s cluster as worker
+      ansible.builtin.shell: |
+        INSTALL_K3S_VERSION={{ k3s_version }} \
+        K3S_URL=https://{{ k3s_master_ip }}:6443 \
+        K3S_TOKEN={{ k3s_token }} \
+        sh /tmp/k3s-install.sh agent
+      args:
+        creates: /usr/local/bin/k3s-agent
+
+- name: Install Cilium CNI
+  hosts: k3s_master
+  become: true
+  
+  tasks:
+    - name: Install Helm
+      ansible.builtin.shell: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      args:
+        creates: /usr/local/bin/helm
+
+    - name: Add Cilium Helm repository
+      ansible.builtin.shell: |
+        helm repo add cilium https://helm.cilium.io/
+        helm repo update
+      changed_when: false
+
+    - name: Install Cilium with Hubble
+      ansible.builtin.shell: |
+        helm install cilium cilium/cilium \
+          --namespace kube-system \
+          --set operator.replicas=1 \
+          --set hubble.relay.enabled=true \
+          --set hubble.ui.enabled=true
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      changed_when: false
+
+    - name: Wait for Cilium to be ready
+      ansible.builtin.shell: kubectl wait --for=condition=ready pod -l k8s-app=cilium -n kube-system --timeout=300s
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      changed_when: false
+
+- name: Install Falco for Runtime Security
+  hosts: k3s_master
+  become: true
+  
+  tasks:
+    - name: Add Falco Helm repository
+      ansible.builtin.shell: |
+        helm repo add falcosecurity https://falcosecurity.github.io/charts
+        helm repo update
+      changed_when: false
+
+    - name: Install Falco
+      ansible.builtin.shell: |
+        helm install falco falcosecurity/falco \
+          --namespace falco \
+          --create-namespace \
+          --set falco.grpc.enabled=true \
+          --set falco.grpcOutput.enabled=true
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      changed_when: false
+

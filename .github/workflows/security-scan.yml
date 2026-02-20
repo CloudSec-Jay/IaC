@@ -76,6 +76,7 @@ jobs:
           collections:
             - name: community.docker
             - name: community.general
+            - name: community.aws
           EOF
       
       - name: Run Ansible Lint
