@@ -1,0 +1,153 @@
+---
+- name: Deploy K3s Cluster on Local VMs
+  hosts: k3s_cluster
+  become: yes
+  vars:
+    k3s_version: v1.28.5+k3s1
+    k3s_token: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
+    flannel_backend: none  # Disable Flannel to use Cilium CNI
+    
+  tasks:
+    - name: Update system packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+
+    - name: Install required dependencies
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Disable swap (required for Kubernetes)
+      shell: swapoff -a
+      
+    - name: Remove swap from fstab
+      lineinfile:
+        path: /etc/fstab
+        regexp: '.*swap.*'
+        state: absent
+
+- name: Deploy K3s Master Node
+  hosts: k3s_master
+  become: yes
+  vars:
+    k3s_version: v1.28.5+k3s1
+    
+  tasks:
+    - name: Download K3s installation script
+      get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        mode: '0755'
+
+    - name: Install K3s master with Cilium CNI
+      shell: |
+        INSTALL_K3S_VERSION={{ k3s_version }} \
+        K3S_TOKEN={{ k3s_token }} \
+        sh /tmp/k3s-install.sh server \
+          --disable traefik \
+          --disable servicelb \
+          --flannel-backend=none \
+          --disable-network-policy \
+          --write-kubeconfig-mode=644
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Wait for K3s to be ready
+      wait_for:
+        port: 6443
+        delay: 10
+        timeout: 300
+
+    - name: Get K3s node token
+      slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      register: k3s_node_token
+
+    - name: Save node token for workers
+      set_fact:
+        k3s_token: "{{ k3s_node_token.content | b64decode | trim }}"
+
+    - name: Copy kubeconfig for local use
+      fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: ~/.kube/k3s-config
+        flat: yes
+
+- name: Deploy K3s Worker Nodes
+  hosts: k3s_workers
+  become: yes
+  vars:
+    k3s_version: v1.28.5+k3s1
+    k3s_master_ip: "{{ hostvars[groups['k3s_master'][0]]['ansible_default_ipv4']['address'] }}"
+    
+  tasks:
+    - name: Download K3s installation script
+      get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        mode: '0755'
+
+    - name: Join K3s cluster as worker
+      shell: |
+        INSTALL_K3S_VERSION={{ k3s_version }} \
+        K3S_URL=https://{{ k3s_master_ip }}:6443 \
+        K3S_TOKEN={{ k3s_token }} \
+        sh /tmp/k3s-install.sh agent
+      args:
+        creates: /usr/local/bin/k3s-agent
+
+- name: Install Cilium CNI
+  hosts: k3s_master
+  become: yes
+  
+  tasks:
+    - name: Install Helm
+      shell: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      args:
+        creates: /usr/local/bin/helm
+
+    - name: Add Cilium Helm repository
+      shell: |
+        helm repo add cilium https://helm.cilium.io/
+        helm repo update
+
+    - name: Install Cilium with Hubble
+      shell: |
+        helm install cilium cilium/cilium \
+          --namespace kube-system \
+          --set operator.replicas=1 \
+          --set hubble.relay.enabled=true \
+          --set hubble.ui.enabled=true
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Wait for Cilium to be ready
+      shell: kubectl wait --for=condition=ready pod -l k8s-app=cilium -n kube-system --timeout=300s
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Install Falco for Runtime Security
+  hosts: k3s_master
+  become: yes
+  
+  tasks:
+    - name: Add Falco Helm repository
+      shell: |
+        helm repo add falcosecurity https://falcosecurity.github.io/charts
+        helm repo update
+
+    - name: Install Falco
+      shell: |
+        helm install falco falcosecurity/falco \
+          --namespace falco \
+          --create-namespace \
+          --set falco.grpc.enabled=true \
+          --set falco.grpcOutput.enabled=true
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml 
